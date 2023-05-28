@@ -85,13 +85,13 @@ function adicionarNovaNota(video) {
     btnEditar.addEventListener('click', () => {
         main.classList.toggle('hidden');
         textArea.classList.toggle('hidden');
-        salvarNoFirebase(video);
     });
 
     textArea.addEventListener('blur', () => {
         main.innerHTML = marked(textArea.value);
         video.notas = textArea.value.split('\n');
         storage();
+        salvarNoFirebase(video);
     });
 
     videoContainer.appendChild(nota);
@@ -113,38 +113,43 @@ function deletarDoFirebase(video) {
 function inicializarVideos() {
     const videosDiv = document.getElementById("videos");
     const savedNotas = localStorage.getItem('notas');
-    const savedVideos = localStorage.getItem('videos');
-    if (savedVideos) {
-        videos = JSON.parse(savedVideos);
-        videos.forEach(video => {
-            const videoContainer = document.createElement("div");
-            videoContainer.className = "col-md-6 video-container";
-            videoContainer.setAttribute("data-video-id", video.id);
+    
+    database.ref('videos').once('value', function(snapshot) {
+        const data = snapshot.val();
+        if (data) {
+            videos = Object.values(data);
+            videos.forEach(video => {
+                const videoContainer = document.createElement("div");
+                videoContainer.className = "col-md-6 video-container";
+                videoContainer.setAttribute("data-video-id", video.id);
 
-            const iframe = document.createElement("iframe");
-            iframe.src = "https://www.youtube.com/embed/" + video.id;
-            iframe.width = "100%";
-            iframe.height = "315";
-            iframe.allowFullscreen = true;
-            iframe.frameborder = 0;
-            videoContainer.appendChild(iframe);
+                const iframe = document.createElement("iframe");
+                iframe.src = "https://www.youtube.com/embed/" + video.id;
+                iframe.width = "100%";
+                iframe.height = "315";
+                iframe.allowFullscreen = true;
+                iframe.frameborder = 0;
+                videoContainer.appendChild(iframe);
 
-            video.notas.forEach(nota => {
-                adicionarNovaNota(video);
+                video.notas.forEach(nota => {
+                    adicionarNovaNota(video);
+                });
+
+                videosDiv.appendChild(videoContainer);
             });
+        }
 
-            videosDiv.appendChild(videoContainer);
-        });
-    }
-
-    if (savedNotas) {
-        const notas = JSON.parse(savedNotas);
-        const lastVideo = videos[0];
-        const lastVideoContainer = videosDiv.querySelector(`[data-video-id="${lastVideo.id}"]`);
-        const lastNota = lastVideoContainer.querySelector('.nota');
-        const textArea = lastNota.querySelector('textarea');
-        textArea.value = notas.join('\n');
-    }
+        if (savedNotas) {
+            const notas = JSON.parse(savedNotas);
+            const lastVideo = videos[0];
+            if (lastVideo) {
+                const lastVideoContainer = videosDiv.querySelector(`[data-video-id="${lastVideo.id}"]`);
+                const lastNota = lastVideoContainer.querySelector('.nota');
+                const textArea = lastNota.querySelector('textarea');
+                textArea.value = notas.join('\n');
+            }
+        }
+    });
 }
 
 window.addEventListener('DOMContentLoaded', inicializarVideos);
