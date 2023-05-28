@@ -49,6 +49,12 @@ function extrairVideoId(videoLink) {
     return match ? match[1] : null;
 }
 
+const notas = JSON.parse(localStorage.getItem("notas"));
+
+if (notas) {
+    notas.forEach(nota => adicionarNovaNota(nota));
+}
+
 function adicionarNovaNota(video) {
     const videosDiv = document.getElementById("videos");
     const videoContainer = videosDiv.querySelector(`[data-video-id="${video.id}"]`);
@@ -87,19 +93,14 @@ function adicionarNovaNota(video) {
         textArea.classList.toggle('hidden');
     });
 
-    textArea.addEventListener('blur', () => {
-        main.innerHTML = marked(textArea.value);
-        video.notas = textArea.value.split('\n');
+    textArea.addEventListener('input', (e) => {
+        main.innerHTML = marked(e.target.value);
+        video.notas.push(e.target.value);
         storage();
         salvarNoFirebase(video);
     });
 
     videoContainer.appendChild(nota);
-}
-
-function storage() {
-    const notas = videos.flatMap(video => video.notas);
-    localStorage.setItem('notas', JSON.stringify(notas));
 }
 
 function salvarNoFirebase(video) {
@@ -110,48 +111,7 @@ function deletarDoFirebase(video) {
     database.ref('videos/' + video.id).remove();
 }
 
-function inicializarVideos() {
-    const videosDiv = document.getElementById("videos");
-    const savedNotas = localStorage.getItem('notas');
-
-    database.ref('videos').once('value', function(snapshot) {
-        const data = snapshot.val();
-        if (data) {
-            videos = Object.values(data);
-            videos.forEach(video => {
-                if (video && video.id) { // Verifica se o objeto video e a propriedade id existem
-                    const videoContainer = document.createElement("div");
-                    videoContainer.className = "col-md-6 video-container";
-                    videoContainer.setAttribute("data-video-id", video.id);
-
-                    const iframe = document.createElement("iframe");
-                    iframe.src = "https://www.youtube.com/embed/" + video.id;
-                    iframe.width = "100%";
-                    iframe.height = "315";
-                    iframe.allowFullscreen = true;
-                    iframe.frameborder = 0;
-                    videoContainer.appendChild(iframe);
-
-                    video.notas.forEach(nota => {
-                        adicionarNovaNota(video);
-                    });
-
-                    videosDiv.appendChild(videoContainer);
-                }
-            });
-        }
-
-        if (savedNotas) {
-            const notas = JSON.parse(savedNotas);
-            const lastVideo = videos[0];
-            if (lastVideo && lastVideo.id) { // Verifica se o objeto lastVideo e a propriedade id existem
-                const lastVideoContainer = videosDiv.querySelector(`[data-video-id="${lastVideo.id}"]`);
-                const lastNota = lastVideoContainer.querySelector('.nota');
-                const textArea = lastNota.querySelector('textarea');
-                textArea.value = notas.join('\n');
-            }
-        }
-    });
+function storage() {
+    const notas = videos.flatMap(video => video.notas);
+    localStorage.setItem('notas', JSON.stringify(notas));
 }
-
-window.addEventListener('DOMContentLoaded', inicializarVideos);
