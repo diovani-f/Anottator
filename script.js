@@ -113,36 +113,38 @@ function deletarDoFirebase(video) {
 function inicializarVideos() {
     const videosDiv = document.getElementById("videos");
     const savedNotas = localStorage.getItem('notas');
-    
+
     database.ref('videos').once('value', function(snapshot) {
         const data = snapshot.val();
         if (data) {
             videos = Object.values(data);
             videos.forEach(video => {
-                const videoContainer = document.createElement("div");
-                videoContainer.className = "col-md-6 video-container";
-                videoContainer.setAttribute("data-video-id", video.id);
+                if (video && video.id) { // Verifica se o objeto video e a propriedade id existem
+                    const videoContainer = document.createElement("div");
+                    videoContainer.className = "col-md-6 video-container";
+                    videoContainer.setAttribute("data-video-id", video.id);
 
-                const iframe = document.createElement("iframe");
-                iframe.src = "https://www.youtube.com/embed/" + video.id;
-                iframe.width = "100%";
-                iframe.height = "315";
-                iframe.allowFullscreen = true;
-                iframe.frameborder = 0;
-                videoContainer.appendChild(iframe);
+                    const iframe = document.createElement("iframe");
+                    iframe.src = "https://www.youtube.com/embed/" + video.id;
+                    iframe.width = "100%";
+                    iframe.height = "315";
+                    iframe.allowFullscreen = true;
+                    iframe.frameborder = 0;
+                    videoContainer.appendChild(iframe);
 
-                video.notas.forEach(nota => {
-                    adicionarNovaNota(video);
-                });
+                    video.notas.forEach(nota => {
+                        adicionarNovaNota(video);
+                    });
 
-                videosDiv.appendChild(videoContainer);
+                    videosDiv.appendChild(videoContainer);
+                }
             });
         }
 
         if (savedNotas) {
             const notas = JSON.parse(savedNotas);
             const lastVideo = videos[0];
-            if (lastVideo) {
+            if (lastVideo && lastVideo.id) { // Verifica se o objeto lastVideo e a propriedade id existem
                 const lastVideoContainer = videosDiv.querySelector(`[data-video-id="${lastVideo.id}"]`);
                 const lastNota = lastVideoContainer.querySelector('.nota');
                 const textArea = lastNota.querySelector('textarea');
